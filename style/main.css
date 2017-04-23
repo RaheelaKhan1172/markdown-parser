@@ -1,0 +1,21 @@
+#container {
+  display: flex;
+  justify-content: space-between;
+  align-content: space-between;
+  flex-direction: row;
+}
+.t-a {
+  display: inline-block;
+}
+
+textarea {
+  width:50em;
+  max-width:50em;
+  height:50em;
+  overflow-y: scroll;
+}
+
+.display {
+  display: inline-block;
+  float: right;
+}
