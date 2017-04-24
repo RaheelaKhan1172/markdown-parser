@@ -118,7 +118,7 @@ var InputContainer = function (_React$Component) {
         var _this = _possibleConstructorReturn(this, (InputContainer.__proto__ || Object.getPrototypeOf(InputContainer)).call(this));
 
         _this.state = { value: '' };
-        _this.parsedVal = null;
+        _this.parsedVal = [];
         _this.handleChange = _this.handleChange.bind(_this);
         return _this;
     }
@@ -127,9 +127,14 @@ var InputContainer = function (_React$Component) {
         key: "handleChange",
         value: function handleChange(event) {
             event.persist();
+            console.log(event.target.value, "the entered value");
             var val = _marker2.default.containsMarkDown(event.target.value);
-            console.log(val);
-            this.parsedVal = React.createElement(val, null, event.target.value);
+            var removeMarkDown = _marker2.default.removeMarkDown(event.target.value);
+            console.log("removed", removeMarkDown);
+            for (var i = 0; i < val.length; i++) {
+                this.parsedVal[i] = React.createElement(val[i], null, removeMarkDown);
+            }
+            console.log(this.parsedVal);
             this.setState(function () {
                 return {
                     value: event.target.value
@@ -182,7 +187,9 @@ var Display = exports.Display = function Display(props) {
     return React.createElement(
         "div",
         { className: "display" },
-        props.value
+        props.value.map(function (elem, ind) {
+            return elem;
+        })
     );
 };
 
@@ -294,17 +301,35 @@ var m = function () {
         "#####": "h5",
         "######": "h6"
     };
-    var reg = /[#?]+/;
+    var reg = /[#?]+/g;
     function containsMarkDown(input) {
-        var m = input.match(reg);
-        console.log("am I hit?", input);
-        if (m) {
-            return mSyntax[m[0]];
+        var toReturn = [];
+        var myArray;
+        console.log("regex", reg);
+        while ((myArray = reg.exec(input)) !== null) {
+            console.log("testing", myArray);
+            console.log("reg", reg.lastIndex);
+            toReturn.push(mSyntax[myArray[0]]);
         }
-        return defaultSyntax;
+        var m = reg.exec(input);
+        console.log("m", m, input, toReturn);
+        if (toReturn) {
+            return toReturn;
+        }
+        return [defaultSyntax];
+    }
+    function removeMarkDown(input) {
+        console.log("input", input);
+        var m = input.match(reg);
+        console.log(" match in remove", m);
+        if (m) {
+            return input.replace(m[0], "");
+        }
+        return input;
     }
     return {
-        containsMarkDown: containsMarkDown
+        containsMarkDown: containsMarkDown,
+        removeMarkDown: removeMarkDown
     };
 }();
 exports.default = m;
