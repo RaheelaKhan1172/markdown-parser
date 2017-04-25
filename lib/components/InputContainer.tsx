@@ -16,17 +16,17 @@ export default class InputContainer extends React.Component<{},State> {
   }
 
   handleChange(event: any) {
+    this.parsedVal = [];
     event.persist();
-
+    console.log("the event", event.key);
     console.log(event.target.value, "the entered value");
     var val = m.containsMarkDown(event.target.value);
 
     let removeMarkDown = m.removeMarkDown(event.target.value);
-
-    console.log("removed", removeMarkDown);
-    
+  
+    console.log("removed", removeMarkDown, val);
     for (var i = 0; i < val.length; i++) {
-      this.parsedVal[i] = React.createElement(val[i], null, removeMarkDown); 
+      this.parsedVal[i] = React.createElement(val[i], null, removeMarkDown[i]); 
     } 
     
     console.log(this.parsedVal);

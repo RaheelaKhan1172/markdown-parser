@@ -11,9 +11,9 @@ var m = (function() {
     "######": "h6"
   };
 
-  let reg = /[#?]+/g;
 
   function containsMarkDown(input) {
+    let reg = /[#?]+/g;
     var toReturn = [];
     var myArray;
     console.log("regex", reg);
@@ -25,7 +25,7 @@ var m = (function() {
 
     let m = reg.exec(input);
     console.log("m", m, input, toReturn); 
-    if (toReturn) {
+    if (toReturn.length) {
       return toReturn;          
     }
 
@@ -33,13 +33,23 @@ var m = (function() {
   }
 
   function removeMarkDown(input) {
-  console.log("input", input);
+    let reg = /[#?]+/;
+    return input.split(reg).filter(elem => elem) || input;
+    /*var toReturn = [];
+    var arr;
+    console.log("I return", toReturn);
+    var fixed = [];
+    for (var i = 0; i < toReturn.length;i++ ) {
+      var currentElem = input.replace(toReturn[i][0]);
+      
+    }
+
     let m = input.match(reg);
-  console.log(" match in remove", m);
+    console.log(" match in remove", m);
     if (m) {
       return input.replace(m[0],"");
     }
-    return input;
+    return input; */
   }
 
   return {

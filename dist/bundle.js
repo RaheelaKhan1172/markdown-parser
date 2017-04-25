@@ -126,13 +126,15 @@ var InputContainer = function (_React$Component) {
     _createClass(InputContainer, [{
         key: "handleChange",
         value: function handleChange(event) {
+            this.parsedVal = [];
             event.persist();
+            console.log("the event", event.key);
             console.log(event.target.value, "the entered value");
             var val = _marker2.default.containsMarkDown(event.target.value);
             var removeMarkDown = _marker2.default.removeMarkDown(event.target.value);
-            console.log("removed", removeMarkDown);
+            console.log("removed", removeMarkDown, val);
             for (var i = 0; i < val.length; i++) {
-                this.parsedVal[i] = React.createElement(val[i], null, removeMarkDown);
+                this.parsedVal[i] = React.createElement(val[i], null, removeMarkDown[i]);
             }
             console.log(this.parsedVal);
             this.setState(function () {
@@ -301,8 +303,8 @@ var m = function () {
         "#####": "h5",
         "######": "h6"
     };
-    var reg = /[#?]+/g;
     function containsMarkDown(input) {
+        var reg = /[#?]+/g;
         var toReturn = [];
         var myArray;
         console.log("regex", reg);
@@ -313,19 +315,30 @@ var m = function () {
         }
         var m = reg.exec(input);
         console.log("m", m, input, toReturn);
-        if (toReturn) {
+        if (toReturn.length) {
             return toReturn;
         }
         return [defaultSyntax];
     }
     function removeMarkDown(input) {
-        console.log("input", input);
-        var m = input.match(reg);
+        var reg = /[#?]+/;
+        return input.split(reg).filter(function (elem) {
+            return elem;
+        }) || input;
+        /*var toReturn = [];
+        var arr;
+        console.log("I return", toReturn);
+        var fixed = [];
+        for (var i = 0; i < toReturn.length;i++ ) {
+          var currentElem = input.replace(toReturn[i][0]);
+          
+        }
+             let m = input.match(reg);
         console.log(" match in remove", m);
         if (m) {
-            return input.replace(m[0], "");
+          return input.replace(m[0],"");
         }
-        return input;
+        return input; */
     }
     return {
         containsMarkDown: containsMarkDown,
