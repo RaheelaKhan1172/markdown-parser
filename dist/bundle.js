@@ -107,8 +107,6 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-/* will communicate with the store
-   for display purposes, it takes in default 'values'*/
 var InputContainer = function (_React$Component) {
     _inherits(InputContainer, _React$Component);
 
@@ -131,10 +129,11 @@ var InputContainer = function (_React$Component) {
             console.log("the event", event.key);
             console.log(event.target.value, "the entered value");
             var val = _marker2.default.containsMarkDown(event.target.value);
-            var removeMarkDown = _marker2.default.removeMarkDown(event.target.value);
-            console.log("removed", removeMarkDown, val);
-            for (var i = 0; i < val.length; i++) {
-                this.parsedVal[i] = React.createElement(val[i], null, removeMarkDown[i]);
+            console.log("THE VAL", val);
+            if (val) {
+                for (var i = 0; i < val.length; i++) {
+                    this.parsedVal[i] = React.createElement(val[i].md, null, val[i].parsed);
+                }
             }
             console.log(this.parsedVal);
             this.setState(function () {
@@ -301,9 +300,77 @@ var m = function () {
         "###": "h3",
         "####": "h4",
         "#####": "h5",
-        "######": "h6"
+        "######": "h6",
+        "*": "em",
+        "**": "strong",
+        "~~": "del"
     };
+    var regexs = {
+        "headers": {
+            "atStart": /^(#+)/,
+            "any": /(#+)/
+        }
+    };
+    function parseHeaderAtStart(input) {
+        console.log("inpuy", input, input.split(/\n/));
+        //case 1, header match at start
+        var reg = /\b([!@\$%\^\&*\)\(+=._-]|[\s]+|[\w]+)\b.*/;
+        var atStart = /^(#+)|(\n#+)|(\0#+)|(\r#+)|(\t#+)/;
+        var match = input.match(reg);
+        var theMarkdown = input.match(regexs.headers.atStart);
+        var parsedVals = [];
+        console.log("the match", match);
+        var arr = void 0;
+        var marks = void 0;
+        var splitted = input.split(/\n/);
+        for (var i = 0; i < splitted.length; i++) {
+            arr = reg.exec(splitted[i]);
+            marks = atStart.exec(splitted[i]);
+            var obj = { parsed: "", md: "" };
+            if (arr) {
+                obj.parsed = arr[0];
+            } else {
+                obj.parsed = splitted[i];
+            }
+            if (marks) {
+                obj.md = mSyntax[marks[0]];
+            } else {
+                obj.md = defaultSyntax;
+            }
+            parsedVals.push(obj);
+        }
+        /*while (((arr = reg.exec(input)) !== null) && ((marks = atStart.exec(input)) !== null)) {
+          console.log("arr", arr);
+          console.log("marks", marks);
+          let mark = "";
+          for (var i = 0; i < marks[0].length;i++) {
+            if (marks[0][i] === "#") {
+              mark += marks[0][i];
+            }
+          }
+        
+          parsedVals.push({md: mSyntax[mark], parsed: arr[0]});
+        } */
+        if (parsedVals.length) {
+            return parsedVals;
+        }
+        return [{ md: mSyntax[theMarkdown[1]], parsed: input }];
+    }
     function containsMarkDown(input) {
+        var atStart = regexs.headers.atStart;
+        var any = regexs.headers.any;
+        var result = atStart.test(input);
+        if (result) {
+            return parseHeaderAtStart(input);
+        }
+        return [{ md: defaultSyntax, parsed: input }];
+        /*console.log(result);
+        if (!result) {
+         result = any.test(input);
+        }
+             return result; */
+    }
+    function parseMarkDown(input) {
         var reg = /[#?]+/g;
         var toReturn = [];
         var myArray;
@@ -320,6 +387,8 @@ var m = function () {
         }
         return [defaultSyntax];
     }
+    /* remove markdown only if it's followed by
+       another character */
     function removeMarkDown(input) {
         var reg = /[#?]+/;
         return input.split(reg).filter(function (elem) {
@@ -331,18 +400,18 @@ var m = function () {
         var fixed = [];
         for (var i = 0; i < toReturn.length;i++ ) {
           var currentElem = input.replace(toReturn[i][0]);
-          
         }
              let m = input.match(reg);
         console.log(" match in remove", m);
         if (m) {
           return input.replace(m[0],"");
         }
-        return input; */
+             return input; */
     }
     return {
         containsMarkDown: containsMarkDown,
-        removeMarkDown: removeMarkDown
+        removeMarkDown: removeMarkDown,
+        parseMarkDown: parseMarkDown
     };
 }();
 exports.default = m;
