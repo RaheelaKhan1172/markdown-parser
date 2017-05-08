@@ -132,7 +132,7 @@ var InputContainer = function (_React$Component) {
             console.log("THE VAL", val);
             if (val) {
                 for (var i = 0; i < val.length; i++) {
-                    this.parsedVal[i] = React.createElement(val[i].md, null, val[i].parsed);
+                    this.parsedVal[i] = val[i];
                 }
             }
             console.log(this.parsedVal);
@@ -184,12 +184,15 @@ var React = _interopRequireWildcard(_react);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+function createMarkup(val) {
+    return { __html: val };
+}
 var Display = exports.Display = function Display(props) {
     return React.createElement(
         "div",
         { className: "display" },
         props.value.map(function (elem, ind) {
-            return elem;
+            return React.createElement("div", { dangerouslySetInnerHTML: createMarkup(elem.parsed) });
         })
     );
 };
@@ -292,6 +295,9 @@ ReactDOM.render(React.createElement(_InputContainer2.default, null), document.ge
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var m = function () {
     var defaultSyntax = "span";
     var mSyntax = {
@@ -309,12 +315,13 @@ var m = function () {
         "headers": {
             "atStart": /^(#+)/,
             "any": /(#+)/
-        }
+        },
+        "asterisks": /\*{1,2}(?=[^\*].*\*{1,2})/g
     };
     function parseHeaderAtStart(input) {
         console.log("inpuy", input, input.split(/\n/));
         //case 1, header match at start
-        var reg = /\b([!@\$%\^\&*\)\(+=._-]|[\s]+|[\w]+)\b.*/;
+        var reg = /(\s|\w).*/;
         var atStart = /^(#+)|(\n#+)|(\0#+)|(\r#+)|(\t#+)/;
         var match = input.match(reg);
         var theMarkdown = input.match(regexs.headers.atStart);
@@ -322,21 +329,27 @@ var m = function () {
         console.log("the match", match);
         var arr = void 0;
         var marks = void 0;
-        var splitted = input.split(/\n/);
+        /* regex is wrong for matching space or words so fix that */
+        var splitted = input.split(/\n/).filter(function (elem) {
+            return elem;
+        });
         for (var i = 0; i < splitted.length; i++) {
             arr = reg.exec(splitted[i]);
             marks = atStart.exec(splitted[i]);
-            var obj = { parsed: "", md: "" };
-            if (arr) {
-                obj.parsed = arr[0];
+            var obj = { parsed: "" };
+            if (!arr && marks) {
+                obj.parsed = "<" + mSyntax[marks[0]] + ">" + splitted[i] + "</" + mSyntax[marks[0]] + ">";
+            } else if (arr) {
+                if (marks) {
+                    obj.parsed = "<" + mSyntax[marks[0]] + ">" + arr[0] + "</" + mSyntax[marks[0]] + ">";
+                } else {
+                    obj.parsed = "<" + defaultSyntax + ">" + arr[0] + "</" + defaultSyntax + ">";
+                }
             } else {
-                obj.parsed = splitted[i];
+                obj.parsed = "<" + defaultSyntax + ">" + splitted[i] + "</" + defaultSyntax + ">";
             }
-            if (marks) {
-                obj.md = mSyntax[marks[0]];
-            } else {
-                obj.md = defaultSyntax;
-            }
+            console.log("arr", arr);
+            console.log("marks", marks);
             parsedVals.push(obj);
         }
         /*while (((arr = reg.exec(input)) !== null) && ((marks = atStart.exec(input)) !== null)) {
@@ -354,14 +367,56 @@ var m = function () {
         if (parsedVals.length) {
             return parsedVals;
         }
+        return [{ parsed: "<" + defaultSyntax + ">" + input + "</" + defaultSyntax + ">" }];
+    }
+    function parseAsterisk(input) {
+        var textReg = /\*{1,2}(.*?)\*{1,2}/;
+        var extractReg = /\*+(?=.*)/;
+        var parsedVals = [];
+        var arr = void 0;
+        var marks = void 0;
+        for (var i = 0; i < input.length; i++) {
+            arr = textReg.exec(_typeof(input[i]) === 'object' ? input[i].parsed : input[i]);
+            marks = extractReg.exec(_typeof(input[i]) === 'object' ? input[i].parsed : input[i]);
+            var obj = { parsed: "" };
+            console.log("arr", arr, marks);
+            if (arr) {
+                if (marks) {
+                    obj.parsed = "<" + mSyntax[marks[0]] + ">" + arr[1] + "</" + mSyntax[marks[0]] + ">";
+                    if (_typeof(input[i]) === 'object') {
+                        input[i] = input[i].parsed.replace(arr[0], obj.parsed);
+                    } else {
+                        input[i] = input[i].replace(arr[0], obj.parsed);
+                    }
+                }
+                console.log("parsed", obj.parsed, input[i]);
+                parsedVals.push({ parsed: input[i] });
+            }
+        }
+        if (parsedVals.length) {
+            return parsedVals;
+        }
+        var theMarkdown = input.match(extractReg);
+        console.log("the markDown", theMarkdown);
         return [{ md: mSyntax[theMarkdown[1]], parsed: input }];
     }
     function containsMarkDown(input) {
+        var parsedVals = [];
+        /* header parsing */
         var atStart = regexs.headers.atStart;
-        var any = regexs.headers.any;
         var result = atStart.test(input);
         if (result) {
-            return parseHeaderAtStart(input);
+            parsedVals = parseHeaderAtStart(input);
+        }
+        console.log("yello", parsedVals);
+        /* em, del, bold parsing */
+        var asterisk = regexs.asterisks;
+        var asteriskResult = asterisk.test(input);
+        if (asteriskResult) {
+            parsedVals = parseAsterisk(parsedVals.length ? parsedVals : [input]);
+        }
+        if (parsedVals.length) {
+            return parsedVals;
         }
         return [{ md: defaultSyntax, parsed: input }];
         /*console.log(result);

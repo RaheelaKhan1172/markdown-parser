@@ -23,7 +23,7 @@ export default class InputContainer extends React.Component<{},State> {
     console.log("THE VAL", val);
     if (val) {
     for (var i = 0; i < val.length; i++) {
-      this.parsedVal[i] = React.createElement(val[i].md, null, val[i].parsed); 
+      this.parsedVal[i] = val[i]; 
     } 
     }
     
