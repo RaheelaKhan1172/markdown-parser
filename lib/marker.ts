@@ -104,9 +104,10 @@ var m = (function() {
           } else {
             input[i] = input[i].replace(arr[0], obj.parsed);
           }
-        } 
-        console.log("parsed", obj.parsed, input[i]); 
-        parsedVals.push({parsed: input[i]});
+        }
+        parsedVals.push({parsed: input[i]}); 
+      } else {
+        parsedVals.push(input[i]);
       }
     }
 
@@ -136,7 +137,7 @@ var m = (function() {
     let asteriskResult = asterisk.test(input);
     
     if (asteriskResult) {
-      
+      console.log("parsed", parsedVals); 
       parsedVals = parseAsterisk(parsedVals.length? parsedVals : [input]);
     }
 

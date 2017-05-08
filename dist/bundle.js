@@ -389,8 +389,9 @@ var m = function () {
                         input[i] = input[i].replace(arr[0], obj.parsed);
                     }
                 }
-                console.log("parsed", obj.parsed, input[i]);
                 parsedVals.push({ parsed: input[i] });
+            } else {
+                parsedVals.push(input[i]);
             }
         }
         if (parsedVals.length) {
@@ -413,6 +414,7 @@ var m = function () {
         var asterisk = regexs.asterisks;
         var asteriskResult = asterisk.test(input);
         if (asteriskResult) {
+            console.log("parsed", parsedVals);
             parsedVals = parseAsterisk(parsedVals.length ? parsedVals : [input]);
         }
         if (parsedVals.length) {
