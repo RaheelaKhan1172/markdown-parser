@@ -316,7 +316,9 @@ var m = function () {
             "atStart": /^(#+)/,
             "any": /(#+)/
         },
-        "asterisks": /\*{1,2}(?=[^\*].*\*{1,2})/g
+        "asteriskOne": /\*{1}(?=[^\*].*\*{1})/,
+        "asteriskTwo": /\*{2}(?=[^\*].*\*{2})/,
+        "del": /~{2}(?=[^~].*~{2})/
     };
     function parseHeaderAtStart(input) {
         console.log("inpuy", input, input.split(/\n/));
@@ -343,9 +345,10 @@ var m = function () {
                 if (marks) {
                     obj.parsed = "<" + mSyntax[marks[0]] + ">" + arr[0] + "</" + mSyntax[marks[0]] + ">";
                 } else {
-                    obj.parsed = "<" + defaultSyntax + ">" + arr[0] + "</" + defaultSyntax + ">";
+                    obj.parsed = "<" + defaultSyntax + ">" + splitted[i] + "</" + defaultSyntax + ">";
                 }
             } else {
+                console.log("le split", splitted);
                 obj.parsed = "<" + defaultSyntax + ">" + splitted[i] + "</" + defaultSyntax + ">";
             }
             console.log("arr", arr);
@@ -367,40 +370,85 @@ var m = function () {
         if (parsedVals.length) {
             return parsedVals;
         }
+        console.log("intput");
         return [{ parsed: "<" + defaultSyntax + ">" + input + "</" + defaultSyntax + ">" }];
     }
-    function parseAsterisk(input) {
-        var textReg = /\*{1,2}(.*?)\*{1,2}/;
-        var extractReg = /\*+(?=.*)/;
+    function parseAsterisk(input, type) {
+        var extractReg = null;
+        var textReg = null;
+        var atIndex = null;
+        if (type === "d") {
+            extractReg = new RegExp(regexs.del);
+            textReg = new RegExp(/~{2}([^~].*?)~{2}/);
+            atIndex = 1;
+        } else if (type === "a") {
+            extractReg = new RegExp(regexs.asteriskOne);
+            textReg = new RegExp(/(\*{1}([^\*].*?)\*{1})/);
+        } else if (type === "a2") {
+            extractReg = new RegExp(regexs.asteriskTwo);
+            textReg = new RegExp(/(\*{2}([^\*].*?)\*{2})/);
+        }
+        atIndex = !atIndex ? 2 : 1;
         var parsedVals = [];
         var arr = void 0;
         var marks = void 0;
+        var obj = { parsed: "" };
+        console.log("the input", input, type);
         for (var i = 0; i < input.length; i++) {
+            console.log("at i", input[i]);
+            var hasMarks = false;
             arr = textReg.exec(_typeof(input[i]) === 'object' ? input[i].parsed : input[i]);
             marks = extractReg.exec(_typeof(input[i]) === 'object' ? input[i].parsed : input[i]);
-            var obj = { parsed: "" };
-            console.log("arr", arr, marks);
-            if (arr) {
-                if (marks) {
-                    obj.parsed = "<" + mSyntax[marks[0]] + ">" + arr[1] + "</" + mSyntax[marks[0]] + ">";
-                    if (_typeof(input[i]) === 'object') {
-                        input[i] = input[i].parsed.replace(arr[0], obj.parsed);
-                    } else {
-                        input[i] = input[i].replace(arr[0], obj.parsed);
-                    }
+            console.log("arr", arr);
+            console.log("marks", marks);
+            if (arr && marks) {
+                obj.parsed = "<" + mSyntax[marks[0]] + ">" + arr[atIndex] + "</" + mSyntax[marks[0]] + ">";
+                if (_typeof(input[i]) === 'object') {
+                    input[i] = input[i].parsed.replace(arr[0], obj.parsed);
+                } else {
+                    input[i] = input[i].replace(arr[0], obj.parsed);
                 }
-                parsedVals.push({ parsed: input[i] });
+                parsedVals.push(_typeof(input[i]) === 'object' ? input[i] : { parsed: input[i] });
             } else {
-                parsedVals.push(input[i]);
+                console.log("arr after and marks", arr, marks, hasMarks);
+                console.log("ey yo?", input[i], parsedVals);
+                console.log("retry");
+                parsedVals.push(_typeof(input[i]) === 'object' ? input[i] : { parsed: input[i] });
             }
         }
+        console.log("parsed it", parsedVals);
         if (parsedVals.length) {
             return parsedVals;
         }
-        var theMarkdown = input.match(extractReg);
-        console.log("the markDown", theMarkdown);
-        return [{ md: mSyntax[theMarkdown[1]], parsed: input }];
+        /*
+         arr = textReg.exec(typeof input[i] === 'object' ?   input[i].parsed : input[i]);
+         marks = extractReg.exec(typeof input[i] === 'object' ?  input[i].parsed : input[i]);
+         let obj = {parsed: ""};
+         console.log("arr", arr, marks, marks[marks.length-1], marks[3]);
+         if (arr) {
+           if (marks) {
+             obj.parsed = "<" + mSyntax[marks[0]] + ">" + arr[1] + "</" + mSyntax[marks[0]] + ">";
+             if (typeof input[i] === 'object') {
+               input[i] = input[i].parsed.replace(arr[0], obj.parsed);
+             } else {
+               input[i] = input[i].replace(arr[0], obj.parsed);
+             }
+           }
+           parsedVals.push({parsed: input[i]});
+         } else {
+           parsedVals.push(typeof input[i] === 'object' ? input[i] : {parsed: input[i]});
+         }
+        }
+           if (parsedVals.length) {
+         return parsedVals;
+        }
+        */
+        console.log("after", input);
+        return [{ parsed: 'parsed' in input[0] ? input[0].parsed : input[0] }];
     }
+    /* split up all the different regex
+        go through the current line one by one and
+        see if it is in input */
     function containsMarkDown(input) {
         var parsedVals = [];
         /* header parsing */
@@ -411,18 +459,28 @@ var m = function () {
         }
         console.log("yello", parsedVals);
         /* em, del, bold parsing */
-        var asterisk = regexs.asterisks;
-        var asteriskResult = asterisk.test(input);
-        if (asteriskResult) {
+        var asteriskTwo = regexs.asteriskTwo;
+        var asteriskTwoResult = asteriskTwo.test(input);
+        if (asteriskTwoResult) {
+            parsedVals = parseAsterisk(parsedVals.length ? parsedVals : [input], "a2");
+        }
+        var asteriskOne = regexs.asteriskOne;
+        var asteriskOneResult = asteriskOne.test(input);
+        if (asteriskOneResult) {
             console.log("parsed", parsedVals);
-            parsedVals = parseAsterisk(parsedVals.length ? parsedVals : [input]);
+            parsedVals = parseAsterisk(parsedVals.length ? parsedVals : [input], "a");
+        }
+        var del = regexs.del;
+        var delResult = del.test(input);
+        if (delResult) {
+            parsedVals = parseAsterisk(parsedVals.length ? parsedVals : [input], "d");
         }
         if (parsedVals.length) {
             return parsedVals;
         }
         return [{ md: defaultSyntax, parsed: input }];
         /*console.log(result);
-        if (!result) {
+             if (!result) {
          result = any.test(input);
         }
              return result; */
